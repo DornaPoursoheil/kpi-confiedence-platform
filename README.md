@@ -237,12 +237,40 @@ Confidence Score (0–1) combines:
 
 ---
 
-## 📊 Visualization
+## 📊  Visualization — Decision vs Diagnostic
 
-* **Power BI** → KPI monitoring (management view)
-* **Streamlit** → data quality diagnostics & anomaly analysis
+The platform separates business reporting from technical diagnostics to ensure clarity and avoid overlap.
 
-👉 Streamlit is used as an **engineering tool**, not just a dashboard
+🟢 Power BI — Decision & Management Layer
+
+Designed for business stakeholders and decision-makers.
+
+Provides:
+
+KPI trends (traffic flow, speed)
+Aggregated performance indicators
+Confidence score visualization
+Visual decision support using an Ampel system (High / Medium / Low)
+
+👉 Focus:
+"What is happening — and can I trust this KPI?"
+
+<p align="center"> <a href="assets/powerbi_overview.jpg"> <img src="assets/powerbi_overview.jpg" width="700"/> </a> </p>
+🔵 Streamlit — Data Quality & Diagnostic Layer
+
+Designed for analysts and data engineers.
+
+Enables:
+
+Deep-dive into KPI calculations
+Inspection of data quality metrics
+Analysis of anomaly signals (ML layer)
+Root cause analysis for low-confidence KPIs
+
+👉 Focus:
+"Why is this KPI unreliable?"
+
+ Streamlit is used as an **engineering tool**, not just a dashboard
 
 ---
 
