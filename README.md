@@ -1,7 +1,11 @@
 # 🚦 Berlin Traffic — KPI Confidence Platform
 
 > **Most dashboards answer:** “What is the KPI?”
+>
 > **This project answers:** **“Can we trust this KPI?”**
+>
+> *Bridging the gap between data visibility and data reliability.*
+
 
 The **KPI Confidence Platform** augments traditional BI by attaching a **Confidence Score (0–1)** to every KPI—derived from data quality, data integrity, time-series consistency, and ML-based anomaly detection.
 
@@ -62,7 +66,6 @@ to
 ---
 
 ## 🔄 End-to-End Data Flow
-
 ```
 Source (Berlin Open Data / Azure)
         ↓
@@ -102,7 +105,11 @@ n8n acts as the **control layer**, not the processing engine.
 
 ### Workflow 1 – Ingestion
 
-[🔍 View full image](assets/workflow_ingestion.jpg)
+* Create ingestion run
+* Generate month targets
+* Call `/ingest` API
+* Track file versions (`ingestion.file_history`)
+* Send Slack alerts
 
 <p align="center">
   <a href="assets/workflow_ingestion.jpg">
@@ -110,17 +117,15 @@ n8n acts as the **control layer**, not the processing engine.
   </a>
 </p>
 
-* Create ingestion run
-* Generate month targets
-* Call `/ingest` API
-* Track file versions (`ingestion.file_history`)
-* Send Slack alerts
-
 ---
 
 ### Workflow 2 – Pipeline Execution
 
-[🔍 View full image](assets/workflow_pipeline.jpg)
+* Query DB for new months
+* Conditional execution
+* Call `/run-pipeline`
+* Execute Stage → Engine → ML ✅
+* Send execution report
 
 <p align="center">
   <a href="assets/workflow_pipeline.jpg">
@@ -128,44 +133,31 @@ n8n acts as the **control layer**, not the processing engine.
   </a>
 </p>
 
-* Query DB for new months
-* Conditional execution
-* Call `/run-pipeline`
-* Execute Stage → KPI → ML
-* Send execution report
-
 ---
 
 ## 📣 Monitoring & Alerts
 
-### Ingestion Monitoring
+The platform includes automated monitoring and Slack-based alerting to ensure reliable pipeline operations.
 
-[🔍 View full image](assets/slack_ingestion_alert.jpg)
+It provides:
 
-<p align="center">
-  <a href="assets/slack_ingestion_alert.jpg">
-    <img src="assets/slack_ingestion_alert.jpg" width="600"/>
-  </a>
-</p>
+- Ingestion status tracking (new / unchanged / missing data)
+- Pipeline execution reporting across all stages
+- Guardrail validation and controlled error handling
 
+ 👉 Enables real-time observability of pipeline health
 
-### Pipeline Monitoring
-
-[🔍 View full image](assets/slack_pipeline_alert.jpg)
-
-<p align="center">
-  <a href="assets/slack_pipeline_alert.jpg">
-    <img src="assets/slack_pipeline_alert.jpg" width="600"/>
-  </a>
-</p>
-
-👉 Real-time observability of pipeline health
+### 🔄 Ingestion Monitoring
+<p align="center"> <a href="assets/slack_ingestion_alert.jpg"> <img src="assets/slack_ingestion_alert.jpg" width="420"/> </a> </p> <p align="center"> <sub>Detection of new, unchanged, and missing data during ingestion</sub> </p>
+⚙️ Pipeline Monitoring
+<p align="center"> <a href="assets/slack_pipeline_alert.jpg"> <img src="assets/slack_pipeline_alert.jpg" width="420"/> </a> </p> <p align="center"> <sub>Execution status, guardrails, and structured pipeline reporting</sub> </p>
 
 ---
 
 ## ⚙️ Pipeline Internals (Execution Engine)
 
 **Execution Flow**
+The pipeline is designed as a controlled, modular execution flow:
 
 ```
 run_e2e
@@ -177,23 +169,39 @@ run_e2e
    → ml_anomaly_score
 ```
 
-**Key Components**
+---
 
-* Manifest tracking (ETag + SHA256)
-* Guardrail (`rc=42`) for safe skipping
-* Batch processing (month-based)
-* SQL deduplication (`DISTINCT ON`)
+### 🧩 Core Capabilities
 
-👉 Designed for controlled, repeatable, and failure-safe execution
+- Idempotent ingestion using ETag & SHA256 manifest tracking  
+- Batch-based processing (month-level execution)  
+- Guardrail validation (`rc=42`) for safe, non-fatal skips  
+- SQL-based deduplication using `DISTINCT ON`  
+- End-to-end orchestration via Python engine  
+
+---
+
+### 🎯 Design Principles
+
+- Deterministic execution  
+- Failure isolation (no full pipeline crash)  
+- Reproducibility of results  
+- Controlled data quality enforcement  
+
+---
+
+## 🚀 Outcome
+
+ 👉 Enables **repeatable, failure-safe, and production-like pipeline execution**
 
 ---
 
 ## ♻️ Idempotency & Reliability
 
-* Fully re-runnable pipeline
-* `--replace-month-slice` for safe reprocessing
-* Duplicate-safe logic
-* Guardrail prevents invalid data propagation
+- Fully re-runnable pipeline  
+- `--replace-month-slice` for safe reprocessing  
+- Duplicate-safe logic  
+- Guardrail prevents invalid data propagation  
 
 👉 Production-ready behavior
 
@@ -201,9 +209,9 @@ run_e2e
 
 ## 🧾 Data Governance & Audit
 
-* File-level tracking (ETag, SHA256)
-* Run-level tracking (`ingestion_runs`)
-* Decision tracking (ingested / skipped / failed)
+- File-level tracking (ETag, SHA256)  
+- Run-level tracking (`ingestion_runs`)  
+- Decision tracking (ingested / skipped / failed)  
 
 👉 Full audit trail for debugging and reproducibility
 
@@ -213,8 +221,8 @@ run_e2e
 
 **Median Absolute Deviation (MAD)**
 
-* Robust to noisy real-world data
-* Threshold: |z| > 3.5 → anomaly
+- Robust to noisy real-world data  
+- Threshold: |z| > 3.5 → anomaly  
 
 👉 Better suited than classic Z-score
 
@@ -224,75 +232,82 @@ run_e2e
 
 Confidence Score (0–1) combines:
 
-* Completeness
-* Consistency
-* Anomaly signals
-* Data integrity
+- Completeness  
+- Consistency  
+- Anomaly signals  
+- Data integrity  
 
 | Score       | Meaning   |
-| ----------- | --------- |
-| 0.85 – 1.00 | ✅ High    |
+|------------|-----------|
+| 0.85 – 1.00 | ✅ High   |
 | 0.60 – 0.84 | ⚠️ Medium |
-| < 0.60      | ❌ Low     |
+| < 0.60      | ❌ Low    |
 
 ---
 
-## 📊  Visualization — Decision vs Diagnostic
+## 📊 Consumption Layer — Decision vs Diagnostic
 
 The platform separates business reporting from technical diagnostics to ensure clarity and avoid overlap.
 
-🟢 Power BI — Decision & Management Layer
+### 🟢 Power BI — Decision & Management Layer
 
 Designed for business stakeholders and decision-makers.
 
 Provides:
 
-KPI trends (traffic flow, speed)
-Aggregated performance indicators
-Confidence score visualization
-Visual decision support using an Ampel system (High / Medium / Low)
+- KPI trends (traffic flow, speed)  
+- Aggregated performance indicators  
+- Confidence score visualization  
+- Visual decision support using an **Ampel system (High / Medium / Low)**  
 
-👉 Focus:
-"What is happening — and can I trust this KPI?"
+👉 Focus:  
+**"What is happening and can I trust this KPI?"**
 
-<p align="center"> <a href="assets/powerbi_overview.jpg"> <img src="assets/powerbi_overview.jpg" width="700"/> </a> </p>
-🔵 Streamlit — Data Quality & Diagnostic Layer
+<p align="center">
+  <a href="assets/powerbi_overview.jpg">
+    <img src="assets/powerbi_overview.jpg" width="700"/>
+  </a>
+</p>
+
+---
+
+### 🔵 Streamlit — Data Quality & Diagnostic Layer
 
 Designed for analysts and data engineers.
 
 Enables:
 
-Deep-dive into KPI calculations
-Inspection of data quality metrics
-Analysis of anomaly signals (ML layer)
-Root cause analysis for low-confidence KPIs
+- Deep-dive into KPI calculations  
+- Inspection of data quality metrics  
+- Analysis of anomaly signals (ML layer)  
+- Root cause analysis for low-confidence KPIs  
 
-👉 Focus:
-"Why is this KPI unreliable?"
+👉 Focus:  
+**"Why is this KPI unreliable?"**
 
- Streamlit is used as an **engineering tool**, not just a dashboard
+👉 Streamlit is used as an **engineering tool**, not just a dashboard
 
 ---
 
 ## 🧪 Demo vs Full System
 
 | Component | Demo    | Full System    |
-| --------- | ------- | -------------- |
-| Data      | Static  | Live ingestion |
-| Database  | ❌       | PostgreSQL     |
-| n8n       | ❌       | ✔              |
-| ML        | Limited | Full           |
-| Alerts    | ❌       | Slack          |
+|----------|--------|----------------|
+| Data     | Static | Live ingestion |
+| Database | ❌      | PostgreSQL     |
+| n8n      | ❌      | ✔              |
+| ML       | Limited| Full           |
+| Alerts   | ❌      | Slack          |
 
 ---
 
 ## 🚧 Production Readiness
 
-* Incremental ingestion (ETag/SHA256)
-* Idempotent batch design
-* Failure isolation (guardrail)
-* Monitoring via Slack
-* Config-driven execution
+- Incremental ingestion (ETag/SHA256)  
+- Idempotent batch design  
+- Failure isolation (guardrail)  
+- Monitoring via Slack  
+- Config-driven execution  
 
 👉 Ready for automation and scaling
 
@@ -304,25 +319,22 @@ Developed by a team of three.
 
 **My contributions:**
 
-* Designed & implemented **n8n workflows (orchestration layer)**
-* Developed **Streamlit application (UI + DB integration)**
-* Contributed to **PostgreSQL modeling**
-* Implemented parts of **pipeline orchestration & ingestion logic**
+- Designed & implemented **n8n workflows (orchestration layer)**  
+- Developed **Streamlit application (UI + DB integration)**  
+- Contributed to **PostgreSQL modeling**  
+- Implemented parts of **pipeline orchestration & ingestion logic**
 
 ---
 
 ## 🔒 Security
 
-* No `.env` files committed
-* Environment-based configuration
-* Raw data excluded from repository
+- No `.env` files committed  
+- Environment-based configuration  
+- Raw data excluded from repository  
 
 ---
 
 ## 📫 Contact
 
-* LinkedIn: https://www.linkedin.com/in/dorna-poursoheil-data
-* Location: Germany
-
----
-
+- LinkedIn: https://www.linkedin.com/in/dorna-poursoheil-data  
+- Location: Germany
