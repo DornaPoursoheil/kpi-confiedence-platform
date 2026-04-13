@@ -264,8 +264,8 @@ Provides:
 **"What is happening and can I trust this KPI?"**
 
 <p align="center">
-  <a href="assets/powerbi_overview.jpg">
-    <img src="assets/powerbi_overview.jpg" width="700"/>
+  <a href="assets/powerbi_overviwe.jpg">
+    <img src="assets/powerbi_overviwe.jpg" width="600"/>
   </a>
 </p>
 
