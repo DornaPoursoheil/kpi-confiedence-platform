@@ -66,8 +66,8 @@ to
 ### 📐 Detailed Architecture Diagram
 
 <p align="center">
-  <a href="docs/kpi_architecture.pdf">
-    <img src="images/kpi_architecture_preview.png" width="600"/>
+  <a href="docs/KPI_Confidence_Scoring_Architektur.pdf">
+    <img src="images/kpi_architecture.png" width="600"/>
   </a>
 </p>
 
